@@ -1,3 +1,9 @@
 [bot]
 telegram_key = 539154645:ASJDDHaseytrrl9mHzGuKBiqegHAxaRZxVw
 telegram_api = https://api.telegram.org/
+
+[mysql]
+mysql_user = root
+mysql_pass = 
+mysql_host = localhost
+mysql_db = test

@@ -3,12 +3,22 @@
 import pymysql.cursors
 import urllib.request, json 
 import datetime as dt
+from configparser import ConfigParser
+import pytz
+
+parser = ConfigParser()
+parser.read('settings.ini')
+mysql_user = parser.get('mysql', 'mysql_user')
+mysql_host = parser.get('mysql', 'mysql_host')
+mysql_db = parser.get('mysql', 'mysql_db')
+mysql_pass = parser.get('mysql', 'mysql_pass')
 
 interval = '1 HOUR'
+interval = '1 MINUTE'
 # Connect to the database
-connection = pymysql.connect(host='localhost',
-                             user='root',
-                             db='test',
+connection = pymysql.connect(host=mysql_host,
+                             user=mysql_user,
+                             db=mysql_db,
                              cursorclass=pymysql.cursors.DictCursor)
 
 # If u_date which already stored older than fresh u_date
@@ -18,8 +28,9 @@ def check_updates(id, u_date):
     with urllib.request.urlopen(
         "http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val="+id) as url:
         data = json.loads(url.read().decode())
-        last_check = dt.datetime.now()
-        new_u_date = dt.datetime.fromtimestamp(int(data['result'][id]['reg_time']))
+        last_check = dt.datetime.now(tz=pytz.utc)
+        new_u_date = dt.datetime.fromtimestamp(int(data['result'][id]['reg_time']), tz=pytz.utc)
+        u_date = pytz.utc.localize(u_date)
         if new_u_date > u_date:
             print("There is an update. Going to notify.")
 
@@ -36,6 +47,7 @@ try:
     with connection.cursor() as cursor:
         # Read a single record
         sql = "SELECT * FROM url WHERE last_check < DATE_SUB(NOW(), INTERVAL %s)" % interval
+        sql = "SELECT * FROM url"
         cursor.execute(sql)
         result = cursor.fetchall()
         for line in result:
