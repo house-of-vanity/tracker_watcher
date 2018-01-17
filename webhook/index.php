@@ -68,7 +68,12 @@ function notify($url){
             send('URL is invalid.', $die = TRUE);
             die();
         }
+        
         $url = $url['t'];
+        $json = file_get_contents(
+            'http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val='.$url
+        );
+        $obj = json_decode($json);
         $stmt = $dbh->query(
             'SELECT * FROM notification n 
             LEFT JOIN contact c ON n.user_id = c.user_id 
@@ -76,9 +81,9 @@ function notify($url){
         );
         if($stmt->rowCount() > 0)
         {
-            send('You already subscribed for '.$url." updates.", $die = TRUE);
+            send('You already subscribed to '.$obj->result->{$url}->topic_title, $die = TRUE);
         }else{
-            send('You will be subscribed for '.$url." updates.");
+            send('You will be subscribed to '.$obj->result->{$url}->topic_title);
             $stmt = $dbh->query(
                 'SELECT * FROM `url`
                 WHERE link = "'.$url.'"'
@@ -93,10 +98,7 @@ function notify($url){
                     );
             }else{
                 // insert new url and user in db
-                $json = file_get_contents(
-                    'http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val='.$url
-                );
-                $obj = json_decode($json);
+
             
                 $stmt = $dbh->query(
                     'INSERT into url (link,u_date) 

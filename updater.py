@@ -5,6 +5,8 @@ import urllib.request, json
 import datetime as dt
 from configparser import ConfigParser
 import pytz
+from urllib.parse import urlencode
+
 
 parser = ConfigParser()
 parser.read('settings.ini')
@@ -24,15 +26,26 @@ connection = pymysql.connect(host=mysql_host,
 # If u_date which already stored older than fresh u_date
 # so going to notify
 # Any way update last_check
-def check_updates(id, u_date):
-    with urllib.request.urlopen(
-        "http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val="+id) as url:
+def check_updates(id, u_date, cursor):
+    link = "http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val="+id
+    with urllib.request.urlopen(link) as url:
         data = json.loads(url.read().decode())
         last_check = dt.datetime.now(tz=pytz.utc)
         new_u_date = dt.datetime.fromtimestamp(int(data['result'][id]['reg_time']), tz=pytz.utc)
         u_date = pytz.utc.localize(u_date)
         if new_u_date > u_date:
-            print("There is an update. Going to notify.")
+            sql = "SELECT c.username, c.user_id " \
+            "FROM notification n LEFT JOIN contact c " \
+            "ON n.user_id = c.user_id WHERE n.topic_id = '%s'" % id
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            for contact in result:
+                print(contact)
+                msg = "%s has been updated. %s" % (
+                    data['result'][id]['topic_title'], 
+                    'https://rutracker.org/forum/viewtopic.php?t='+id)
+                send(contact['user_id'], msg)
+
 
         with connection.cursor() as cursor:
             # Create a new record
@@ -43,6 +56,15 @@ def check_updates(id, u_date):
                  id))
         connection.commit()        
 
+def send(id, msg):
+    url =  parser.get('bot', 'telegram_api') + 'bot'+ parser.get('bot', 'telegram_key') + '/sendMessage'
+    post_fields = {
+        'text': msg,
+        'chat_id': id
+        }
+    request = urllib.request.Request(url, urlencode(post_fields).encode())
+    json = urllib.request.urlopen(request).read().decode()
+    
 try:
     with connection.cursor() as cursor:
         # Read a single record
@@ -52,6 +74,6 @@ try:
         result = cursor.fetchall()
         for line in result:
             print('Going to check %s. Last check was at %s' % (line['link'], line['last_check']))
-            check_updates(line['link'], line['u_date'])
+            check_updates(line['link'], line['u_date'], cursor)
 finally:
     connection.close()
