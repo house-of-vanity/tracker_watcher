@@ -16,7 +16,7 @@ mysql_db = parser.get('mysql', 'mysql_db')
 mysql_pass = parser.get('mysql', 'mysql_pass')
 
 interval = '1 HOUR'
-interval = '1 MINUTE'
+#interval = '1 MINUTE'
 # Connect to the database
 connection = pymysql.connect(host=mysql_host,
                              user=mysql_user,
@@ -60,7 +60,8 @@ def send(id, msg):
     url =  parser.get('bot', 'telegram_api') + 'bot'+ parser.get('bot', 'telegram_key') + '/sendMessage'
     post_fields = {
         'text': msg,
-        'chat_id': id
+        'chat_id': id,
+        'parse_mode': 'Markdown'
         }
     request = urllib.request.Request(url, urlencode(post_fields).encode())
     json = urllib.request.urlopen(request).read().decode()
@@ -69,7 +70,7 @@ try:
     with connection.cursor() as cursor:
         # Read a single record
         sql = "SELECT * FROM url WHERE last_check < DATE_SUB(NOW(), INTERVAL %s)" % interval
-        sql = "SELECT * FROM url"
+        #sql = "SELECT * FROM url"
         cursor.execute(sql)
         result = cursor.fetchall()
         for line in result:
