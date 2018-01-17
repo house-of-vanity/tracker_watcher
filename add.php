@@ -13,17 +13,25 @@ if (
 }
 else{
     $url = $_POST['url'];
-    if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
+    // check url is valid
+    if (
+        filter_var($url, FILTER_VALIDATE_URL) === FALSE ||
+        !((parse_url($url, PHP_URL_HOST) == 'rutracker.org')) ||
+        !((parse_url($url, PHP_URL_PATH) == '/forum/viewtopic.php')) ||
+        !((parse_url($url, PHP_URL_QUERY)))
+        ) {
         die('Not a valid URL');
     }    
     parse_str((parse_url($url, PHP_URL_QUERY)), $url);
+    if (!isset($url['t']))
+    {
+        die('Not a valid URL');
+    }
     $url = $url['t'];
     $username = $_POST['telegram'];
 }
 
-// check url is valid
-
-// check user already reqested notify about this topic
+// check if the same user already reqested notify about the same this topic
 $stmt = $dbh->query(
     'SELECT c.username, u.link FROM `contact` c 
     LEFT JOIN `url` u ON u.id = c.topic_id 
