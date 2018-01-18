@@ -30,8 +30,7 @@ function register(){
     else
     {
         send('Send me an URL to rutracker.org topic and i will notify you when it will be updated. 
-/stop to remove notification.
-/list to show all notifications.', $die = TRUE);
+/list to show all notifications or stop it.', $die = TRUE);
     }
 }
 
@@ -212,7 +211,7 @@ else
             stop(substr($message, 5));
 
         }else{
-            send('Give me ID');
+            send('Use stop... links from /list output.');
         }
     }else{
                 register();
