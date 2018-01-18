@@ -1,7 +1,11 @@
 <?php
 $config = parse_ini_file("../settings.ini");
 
-$dbh = new PDO('mysql:host='.$config['mysql_host'].';dbname='.$config['mysql_db'], $config['mysql_user']);
+$dbh = new PDO(
+'mysql:host='.$config['mysql_host'].';dbname='.$config['mysql_db'], 
+$config['mysql_user'], 
+$config['mysql_pass']
+);
 
 $request = file_get_contents('php://input');
 $request = json_decode( $request, TRUE );

@@ -1,4 +1,4 @@
-
+#!/usr/bin/python3
 # TODO - config file. 
 import pymysql.cursors
 import urllib.request, json 
@@ -9,18 +9,19 @@ from urllib.parse import urlencode
 
 
 parser = ConfigParser()
-parser.read('settings.ini')
+parser.read('/home/ab/repos/tracker_watcher/settings.ini')
 mysql_user = parser.get('mysql', 'mysql_user')
 mysql_host = parser.get('mysql', 'mysql_host')
 mysql_db = parser.get('mysql', 'mysql_db')
 mysql_pass = parser.get('mysql', 'mysql_pass')
 
-interval = '1 HOUR'
-#interval = '1 MINUTE'
+#interval = '1 HOUR'
+interval = '20 MINUTE'
 # Connect to the database
 connection = pymysql.connect(host=mysql_host,
                              user=mysql_user,
                              db=mysql_db,
+                             passwd=mysql_pass,
                              cursorclass=pymysql.cursors.DictCursor)
 
 # If u_date which already stored older than fresh u_date
