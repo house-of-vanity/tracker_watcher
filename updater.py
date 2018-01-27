@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# TODO - config file. 
 import pymysql.cursors
 import urllib.request, json 
 import datetime as dt
@@ -42,9 +41,10 @@ def check_updates(id, u_date, cursor):
             result = cursor.fetchall()
             for contact in result:
                 print(contact)
-                msg = "%s has been updated. %s" % (
+                msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:%s`" % (
                     data['result'][id]['topic_title'], 
-                    'https://rutracker.org/forum/viewtopic.php?t='+id)
+                    'https://rutracker.org/forum/viewtopic.php?t='+id,
+                    data['result'][id]['info_hash'])
                 send(contact['user_id'], msg)
 
 
@@ -62,7 +62,8 @@ def send(id, msg):
     post_fields = {
         'text': msg,
         'chat_id': id,
-        'parse_mode': 'Markdown'
+        'parse_mode': 'Markdown',
+        'disable_web_page_preview': 1
         }
     request = urllib.request.Request(url, urlencode(post_fields).encode())
     json = urllib.request.urlopen(request).read().decode()
