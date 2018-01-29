@@ -20,6 +20,8 @@ interval = '20 MINUTE'
 connection = pymysql.connect(host=mysql_host,
                              user=mysql_user,
                              db=mysql_db,
+                             use_unicode=True,
+                             charset="utf8",
                              passwd=mysql_pass,
                              cursorclass=pymysql.cursors.DictCursor)
 
@@ -34,18 +36,28 @@ def check_updates(id, u_date, cursor):
         new_u_date = dt.datetime.fromtimestamp(int(data['result'][id]['reg_time']), tz=pytz.utc)
         u_date = pytz.utc.localize(u_date)
         if new_u_date > u_date:
+            log(logger='Updater',
+                line='Update found',
+                link=id)
             sql = "SELECT c.username, c.user_id " \
             "FROM notification n LEFT JOIN contact c " \
             "ON n.user_id = c.user_id WHERE n.topic_id = '%s'" % id
             cursor.execute(sql)
             result = cursor.fetchall()
             for contact in result:
-                print(contact)
+                log(logger='Updater',
+                    line='Notifying user',
+                    user_id=contact['user_id'],
+                    link=id)
                 msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:%s`" % (
                     data['result'][id]['topic_title'], 
                     'https://rutracker.org/forum/viewtopic.php?t='+id,
                     data['result'][id]['info_hash'])
                 send(contact['user_id'], msg)
+        else:
+            log(logger='Updater',
+                line='There is not update',
+                link=id)
 
 
         with connection.cursor() as cursor:
@@ -57,7 +69,17 @@ def check_updates(id, u_date, cursor):
                  id))
         connection.commit()        
 
+def log(line, logger='Updater', user_id=0, link=0):
+    global connection
+    with connection.cursor() as cursor:
+        sql = "INSERT INTO log (logger, line, link, user_id) VALUES ('%s', '%s', '%s', '%s')" % (logger, line, link, user_id)
+        cursor.execute(sql)
+
+
 def send(id, msg):
+    log(logger='Updater',
+        line='Senging message for %s. Body: %s' % (id, msg),
+        user_id=id)
     url =  parser.get('bot', 'telegram_api') + 'bot'+ parser.get('bot', 'telegram_key') + '/sendMessage'
     post_fields = {
         'text': msg,
@@ -68,6 +90,8 @@ def send(id, msg):
     request = urllib.request.Request(url, urlencode(post_fields).encode())
     json = urllib.request.urlopen(request).read().decode()
     
+log(logger='Updater',
+      line='Updater started bt CRON.')
 try:
     with connection.cursor() as cursor:
         # Read a single record
@@ -80,3 +104,4 @@ try:
             check_updates(line['link'], line['u_date'], cursor)
 finally:
     connection.close()
+

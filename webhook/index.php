@@ -4,7 +4,8 @@ $config = parse_ini_file("../settings.ini");
 $dbh = new PDO(
 'mysql:host='.$config['mysql_host'].';dbname='.$config['mysql_db'], 
 $config['mysql_user'], 
-$config['mysql_pass']
+$config['mysql_pass'],
+array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8")
 );
 
 $request = file_get_contents('php://input');
@@ -12,9 +13,9 @@ $request = json_decode( $request, TRUE );
 
 function register(){
     global $dbh;
-    global $config;
     global $user_id;
     global $username;
+    global $message;
     $stmt = $dbh->query(
         'SELECT id FROM `contact`
         WHERE user_id = "'.$user_id.'"'
@@ -26,6 +27,7 @@ function register(){
             VALUES ("'.$username.'","'.$user_id.'")'
             );
         send('Hello! Send me an URL to rutracker.org topic and i will notify you when topic will be updated.');
+        logger('User registered', 'Webhook');
     }
     else
     {
@@ -34,9 +36,20 @@ function register(){
     }
 }
 
+function logger($line, $logger = 'Webhook'){
+    global $dbh;
+    global $user_id;
+    global $username;
+    $stmt = $dbh->query(
+        'INSERT INTO log (logger, line, user_id) 
+        VALUES ("'.$logger.'","'.$line.'", "'.$user_id.'")'
+        );
+}
+
 function send($msg, $die = FALSE){
     global $config;
     global $user_id;
+    logger('Message sent. Body: '.$msg, 'Webhook');
     $url = $config['telegram_api'].'bot'.$config['telegram_key'].'/sendMessage';
     $data = array(
         'chat_id' => $user_id, 
@@ -197,6 +210,7 @@ else
     #$user_id = '124317807';
     #$message = 'https://rutracker.org/forum/viewtopic.php?t=5505520';
     $username = $request['message']['from']['username'];
+    logger('Message from user. Body: '.$message, 'Webhook');
 
 
     if(!(filter_var($message, FILTER_VALIDATE_URL) === FALSE)) {
