@@ -49,7 +49,7 @@ function logger($line, $logger = 'Webhook'){
 function send($msg, $die = FALSE){
     global $config;
     global $user_id;
-    logger('Message sent. Body: '.$msg, 'Webhook');
+    logger('Message sent. Body: '.$msg, 'Webhook Send');
     $url = $config['telegram_api'].'bot'.$config['telegram_key'].'/sendMessage';
     $data = array(
         'chat_id' => $user_id, 
@@ -210,7 +210,7 @@ else
     #$user_id = '124317807';
     #$message = 'https://rutracker.org/forum/viewtopic.php?t=5505520';
     $username = $request['message']['from']['username'];
-    logger('Message from user. Body: '.$message, 'Webhook');
+    logger('Message from user. Body: '.$message, 'Webhook Receive');
 
 
     if(!(filter_var($message, FILTER_VALIDATE_URL) === FALSE)) {

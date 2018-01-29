@@ -77,7 +77,7 @@ def log(line, logger='Updater', user_id=0, link=0):
 
 
 def send(id, msg):
-    log(logger='Updater',
+    log(logger='Updater Send',
         line='Senging message for %s. Body: %s' % (id, msg),
         user_id=id)
     url =  parser.get('bot', 'telegram_api') + 'bot'+ parser.get('bot', 'telegram_key') + '/sendMessage'
