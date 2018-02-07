@@ -28,7 +28,7 @@ connection = pymysql.connect(host=mysql_host,
 # If u_date which already stored older than fresh u_date
 # so going to notify
 # Any way update last_check
-def check_updates(id, u_date, cursor):
+def check_updates(id, u_date, size, cursor):
     link = "http://api.rutracker.org/v1/get_tor_topic_data?by=topic_id&val="+id
     with urllib.request.urlopen(link) as url:
         data = json.loads(url.read().decode())
@@ -36,24 +36,25 @@ def check_updates(id, u_date, cursor):
         new_u_date = dt.datetime.fromtimestamp(int(data['result'][id]['reg_time']), tz=pytz.utc)
         u_date = pytz.utc.localize(u_date)
         if new_u_date > u_date:
-            log(logger='Updater',
-                line='Update found',
-                link=id)
-            sql = "SELECT c.username, c.user_id " \
-            "FROM notification n LEFT JOIN contact c " \
-            "ON n.user_id = c.user_id WHERE n.topic_id = '%s'" % id
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            for contact in result:
+            if int(data['result'][id]['size']) != int(size):
                 log(logger='Updater',
-                    line='Notifying user',
-                    user_id=contact['user_id'],
+                    line='Update found',
                     link=id)
-                msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:btih:%s`" % (
-                    data['result'][id]['topic_title'], 
-                    'https://rutracker.org/forum/viewtopic.php?t='+id,
-                    data['result'][id]['info_hash'])
-                send(contact['user_id'], msg)
+                sql = "SELECT c.username, c.user_id " \
+                "FROM notification n LEFT JOIN contact c " \
+                "ON n.user_id = c.user_id WHERE n.topic_id = '%s'" % id
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                for contact in result:
+                    log(logger='Updater',
+                        line='Notifying user',
+                        user_id=contact['user_id'],
+                        link=id)
+                    msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:btih:%s`" % (
+                        data['result'][id]['topic_title'], 
+                        'https://rutracker.org/forum/viewtopic.php?t='+id,
+                        data['result'][id]['info_hash'])
+                    send(contact['user_id'], msg)
         else:
             log(logger='Updater',
                 line='There is not update',
@@ -62,10 +63,11 @@ def check_updates(id, u_date, cursor):
 
         with connection.cursor() as cursor:
             # Create a new record
-            sql = "UPDATE url SET last_check = %s, u_date = %s WHERE link =  %s"
+            sql = "UPDATE url SET last_check = %s, u_date = %s, size = %s WHERE link =  %s"
             cursor.execute(sql, (
                 last_check.strftime('%Y-%m-%d %H:%M:%S'),
                 new_u_date.strftime('%Y-%m-%d %H:%M:%S'),
+                int(data['result'][id]['size']),
                  id))
         connection.commit()        
 
@@ -101,7 +103,7 @@ try:
         result = cursor.fetchall()
         for line in result:
             print('Going to check %s. Last check was at %s' % (line['link'], line['last_check']))
-            check_updates(line['link'], line['u_date'], cursor)
+            check_updates(line['link'], line['u_date'], line['size'], cursor)
 finally:
     connection.close()
 

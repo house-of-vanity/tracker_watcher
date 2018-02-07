@@ -117,8 +117,8 @@ function notify($url){
 
             
                 $stmt = $dbh->query(
-                    'INSERT into url (link,u_date) 
-                    VALUES ("'.$url.'","'.gmdate("Y-m-d H:i:s", $obj->reg_time).'")'
+                    'INSERT into url (link,u_date, size) 
+                    VALUES ("'.$url.'","'.gmdate("Y-m-d H:i:s", $obj->reg_time).'", "'.$obj->size.'")'
                 );
                 $stmt = $dbh->query(
                     'INSERT into notification (user_id, topic_id) 
