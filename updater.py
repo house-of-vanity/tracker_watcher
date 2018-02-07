@@ -49,7 +49,7 @@ def check_updates(id, u_date, cursor):
                     line='Notifying user',
                     user_id=contact['user_id'],
                     link=id)
-                msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:%s`" % (
+                msg = "%s has been updated.\n[Open on RuTracker.org](%s)\n`magnet:?xt=urn:btih:%s`" % (
                     data['result'][id]['topic_title'], 
                     'https://rutracker.org/forum/viewtopic.php?t='+id,
                     data['result'][id]['info_hash'])
