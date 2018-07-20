@@ -31,7 +31,7 @@ else{
     $username = $_POST['telegram'];
 }
 
-// check if the same user already reqested notify about the same this topic
+// check if the same user already reqested notify about the same topic
 $stmt = $dbh->query(
     'SELECT c.username, u.link FROM `contact` c 
     LEFT JOIN `url` u ON u.id = c.topic_id 
